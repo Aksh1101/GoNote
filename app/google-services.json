@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "621855232680",
+    "project_id": "gonote-79622",
+    "storage_bucket": "gonote-79622.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:621855232680:android:f77ae8c6745c1790dc289d",
+        "android_client_info": {
+          "package_name": "com.example.gonote"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0HPQpNjXaw4jwfjlCUSJucbfPPuqNNTQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

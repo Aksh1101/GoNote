@@ -1,7 +1,7 @@
 package com.example.gonote.screens
 
-import android.graphics.Paint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,11 +16,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,70 +38,50 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
+import androidx.navigation.NavHostController
 import com.example.gonote.Models.Notes
+import com.example.gonote.Navigation.NotesNavigationItem
 import com.example.gonote.ui.theme.Black
 import com.example.gonote.ui.theme.Grey
 import com.example.gonote.ui.theme.LightGrey
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
 
-@Preview
+
 @Composable
-fun NotesScreen(){
+fun NotesScreen(navHostController: NavHostController){
 
-    val notesList = listOf(
-        Notes(
-            title = "First Task",
-            description = "Drink Water"
-        ),
-        Notes(
-            title = "Second Task",
-            description = "Complete Kotlin Crash Course"
-        ),
+    val database = FirebaseFirestore.getInstance()
+    val notesDBRef = database.collection("Notes")
 
-        Notes(
-            title = "Third Task",
-            description = "Revise Android Basics"
-        ),
+    val notesList = remember {
+        mutableStateListOf<Notes>()
+    }
 
-        Notes(
-            title = "Fourth Task",
-            description = "Apply for Internships"
-        ),
+    val dataValue = remember {
+        mutableStateOf(false)
+    }
 
-        Notes(
-            title = "Fifth Task",
-            description = "Write a Blog on Medium"
-        ),
-
-        Notes(
-            title = "Sixth Task",
-            description = "Practice DSA from Kunal Kushwaha's Playlist"
-        ),
-
-        Notes(
-            title = "Seventh Task",
-            description = "Learn Linux Fundamentals"
-        ),
-
-        Notes(
-            title = "Eighth Task",
-            description = "Study Spring Boot for Backend Development"
-        ),
-
-        Notes(
-            title = "Ninth Task",
-            description = "Contribute to Open Source Projects"
-        ),
-
-        Notes(
-            title = "Tenth Task",
-            description = "Read about Financial Literacy and Forex"
-        )
-    )
-
+    LaunchedEffect(Unit) {
+        notesDBRef.addSnapshotListener { value , error->
+            if (error == null){
+                val data = value?.toObjects(Notes::class.java)
+                notesList.clear()
+                notesList.addAll(data!!)
+                dataValue.value= true
+            }
+            else{
+                dataValue.value= false
+            }
+        }
+    }
 
     Scaffold(floatingActionButton = {
         FloatingActionButton(contentColor = Color.White, containerColor = Color.Red,
-            onClick = {}) {
+            onClick = {
+                navHostController.navigate(NotesNavigationItem.InsertNoteScreen.route + "/defaultId")
+            }) {
             Icon(imageVector = Icons.Default.Add, contentDescription = "ADD",
                 modifier = Modifier.size(30.dp))
         }
@@ -106,10 +95,19 @@ fun NotesScreen(){
                     color = Color.White,
                     fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.padding(10.dp))
-                LazyColumn {
-                    items(notesList) {notes->
-                        ListItem(notes)
 
+                if (dataValue.value){
+                    LazyColumn {
+                        items(notesList) {notes->
+                            ListItem(notes , notesDBRef,navHostController)
+
+                        }
+                    }
+                }
+                else{
+                    Box(modifier = Modifier.fillMaxSize()){
+                        CircularProgressIndicator(modifier = Modifier.size(25.dp)
+                            .align(Alignment.Center))
                     }
                 }
             }
@@ -117,29 +115,47 @@ fun NotesScreen(){
     }
 }
 
-@Composable
-@Preview
-fun ListItemPreview(){
-    ListItem(notes = Notes(
-        "first task",
-        "wake up first and then don't touch the phone "))
-}
 
 @Composable
-fun ListItem(notes: Notes) {
+fun ListItem(notes: Notes, notesDBRef: CollectionReference , navHostController : NavHostController) {
+
+    var expanded by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier
         .fillMaxWidth()
         .padding(10.dp)
         .clip(shape = RoundedCornerShape(corner = CornerSize(10.dp)))
         .background(color = Grey))
     {
+
+        DropdownMenu(modifier = Modifier.background(Color.White),
+            properties = PopupProperties(clippingEnabled = true),
+            offset = _root_ide_package_.androidx.compose.ui.unit.DpOffset(x=(-40.dp),y=0.dp),
+            expanded = expanded,
+            onDismissRequest = {expanded = false}) {
+            DropdownMenuItem(text = {Text(text = "Update", color = Color.Black, fontSize = 15.sp)},
+                onClick = {
+                    navHostController.navigate(NotesNavigationItem.InsertNoteScreen.route + "/${notes.id}")
+                    expanded = false
+                })
+            DropdownMenuItem(text = {Text(text = "Delete", color = Color.Black, fontSize = 15.sp)},
+                onClick = {
+                    notes.id
+                    notesDBRef.document(notes.id).delete()
+                    expanded = false
+
+                })
+        }
+
         Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Menu",
-            tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(10.dp))
+            tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+                .clickable{expanded = true})
         
         Column(modifier = Modifier.padding(20.dp)) {
             Text(text = notes.title, color = Color.White,
-                fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = notes.description, color = LightGrey)
+                fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Spacer(modifier = Modifier.padding(2.dp))
+            Text(text = notes.description, color = LightGrey, fontSize = 15.sp)
         }
     }
 
