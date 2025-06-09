@@ -84,7 +84,7 @@ This project is released under the MIT License.
 
 **Akshat Bhardwaj**
 📬 [GitHub](https://github.com/Aksh1101)
-🌐 [LinkedIn](www.linkedin.com/in/akshat-bhardwajj)
+🌐 [LinkedIn](https://www.linkedin.com/in/akshat-bhardwajj/)
 
 ---
 
